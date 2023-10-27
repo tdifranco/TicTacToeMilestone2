@@ -5,10 +5,23 @@ public class TicTacToe {
     private int turn;
     private int [][] game;
 
-    public TicTacToe( ) {
+    private int player;
+
+
+    public TicTacToe(int startingPlayer) {
         game = new int[SIDE][SIDE];
+        player = startingPlayer;
+        turn = 1;
         resetGame( );
     }
+
+    public void setPlayer(int player) {
+        this.player = player;
+    }
+    public int getPlayer() {
+        return player;
+    }
+
 
     public int play( int row, int col ) {
         int currentTurn = turn;
@@ -82,6 +95,7 @@ public class TicTacToe {
             for( int col = 0; col < SIDE; col++ )
                 game[row][col] = 0;
         turn = 1;
+        player = 0;
     }
 
     public String result( ) {
