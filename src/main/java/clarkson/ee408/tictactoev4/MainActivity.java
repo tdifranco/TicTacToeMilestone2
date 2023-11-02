@@ -1,5 +1,8 @@
 package clarkson.ee408.tictactoev4;
 
+import static android.provider.SyncStateContract.Helpers.update;
+
+import android.app.DownloadManager;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Point;
@@ -11,27 +14,70 @@ import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.TextView;
 import com.google.gson.Gson;
-import android.os.Bundle;
-
-
-
+import android.os.Handler;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
+import client.SocketClient;
+import socket.Request;
+import socket.Response;
 
 
 public class MainActivity extends AppCompatActivity {
     private TicTacToe tttGame;
     private Button [][] buttons;
     private TextView status;
-
     private Gson gson;
-
+    private Handler handler = new Handler();
+    private Boolean shouldRequestMove = false;
+    private int player = tttGame.getPlayer();
     @Override
-    protected void onCreate( Bundle savedInstanceState ) {
+    protected void onCreate( Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
-        tttGame = new TicTacToe(startingPlayer);
+        tttGame = new TicTacToe(player);
+        player = tttGame.getPlayer();
         buildGuiByCode( );
         gson = new Gson();
+        handler.postDelayed(runnableCode, 2000);
+        updateTurnStatus();
+    }
+    // Define the code block to be executed
+    private Runnable runnableCode = new Runnable() {
+        @Override
+        public void run() {
+            if (shouldRequestMove){
+            Log.d("Handlers", "Called on main thread");
+            requestMove();}
+        }
+    };
+    private void requestMove(){
+        Request request = new Request(Request.RequestType.REQUEST_MOVE, null);
+        SocketClient socketClient = SocketClient.getInstance();
+        Response response = socketClient.sendRequest(request, Response.class);
+        if(response != null && response.getStatus() == Response.ResponseStatus.SUCCESS){
+            new ButtonHandler();
+        }
+    }
+    private void sendMove(int row, int col) {
+        Request request_ = new Request(Request.RequestType.SEND_MOVE, null);
+        int move_num = row + col;
+        String moveJson = gson.toJson(move_num);
+        request_.setData(moveJson);
+        SocketClient socketClient = SocketClient.getInstance();
+        Response response = socketClient.sendRequest(move_num, Response.class);
+
+    }
+
+    private void updateTurnStatus() {
+        shouldRequestMove = (tttGame.getPlayer() == tttGame.getTurn());
+        if (shouldRequestMove) {
+            status.setText("Your Turn");
+        } else {
+            status.setText("Waiting for Opponent");
+            shouldRequestMove = true;
+            enableButtons(shouldRequestMove);
+        }
+
     }
 
     public void buildGuiByCode( ) {
@@ -128,8 +174,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void showNewGameDialog( ) {
         AlertDialog.Builder alert = new AlertDialog.Builder( this );
-        alert.setTitle( "This is fun" );
-        alert.setMessage( "Play again?" );
+        alert.setTitle(tttGame.result());
+        alert.setMessage( "Do you want to play again?" );
         PlayDialog playAgain = new PlayDialog( );
         alert.setPositiveButton( "YES", playAgain );
         alert.setNegativeButton( "NO", playAgain );
@@ -139,25 +185,25 @@ public class MainActivity extends AppCompatActivity {
     private class ButtonHandler implements View.OnClickListener {
         public void onClick( View v ) {
             Log.d("button clicked", "button clicked");
-
             for( int row = 0; row < TicTacToe.SIDE; row ++ )
                 for( int column = 0; column < TicTacToe.SIDE; column++ )
                     if( v == buttons[row][column] )
-                        update( row, column );
+                        if (buttons[row][column].isEnabled()) {
+                            sendMove(row, column);
+                            update(row, column);
         }
-    }
-
-    private class PlayDialog implements DialogInterface.OnClickListener {
-        public void onClick( DialogInterface dialog, int id ) {
-            if( id == -1 ) /* YES button */ {
-                tttGame.resetGame( );
-                enableButtons( true );
-                resetButtons( );
-                status.setBackgroundColor( Color.GREEN );
-                status.setText( tttGame.result( ) );
+    }}
+       private class PlayDialog implements DialogInterface.OnClickListener {
+            public void onClick( DialogInterface dialog, int id ) {
+                if( id == -1 ) /* YES button */ {
+                    tttGame.resetGame( );
+                    enableButtons( true );
+                    resetButtons( );
+                    status.setBackgroundColor( Color.GREEN );
+                    status.setText( tttGame.result( ) );
+                }
+                else if( id == -2 ) // NO button
+                    MainActivity.this.finish( );
             }
-            else if( id == -2 ) // NO button
-                MainActivity.this.finish( );
-        }
     }
 }

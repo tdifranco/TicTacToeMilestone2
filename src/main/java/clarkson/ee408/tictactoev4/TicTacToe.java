@@ -10,9 +10,9 @@ public class TicTacToe {
 
     public TicTacToe(int startingPlayer) {
         game = new int[SIDE][SIDE];
-        player = startingPlayer;
         turn = 1;
-        resetGame( );
+        player = startingPlayer;
+        resetGame();
     }
 
     public void setPlayer(int player) {
@@ -22,19 +22,21 @@ public class TicTacToe {
         return player;
     }
 
+    public int getTurn() {
+        return turn;
+    }
 
-    public int play( int row, int col ) {
+    public int play(int row, int col) {
         int currentTurn = turn;
-        if( row >= 0 && col >= 0 && row < SIDE && col < SIDE
-                && game[row][col] == 0 ) {
+        if (row >= 0 && col >= 0 && row < SIDE && col < SIDE
+                && game[row][col] == 0 && player == turn) {
             game[row][col] = turn;
-            if( turn == 1 )
+            if (turn == 1)
                 turn = 2;
             else
                 turn = 1;
             return currentTurn;
-        }
-        else
+        } else
             return 0;
     }
 
@@ -95,15 +97,23 @@ public class TicTacToe {
             for( int col = 0; col < SIDE; col++ )
                 game[row][col] = 0;
         turn = 1;
-        player = 0;
+        player = 2;
     }
 
     public String result( ) {
-        if( whoWon( ) > 0 )
-            return "Player " + whoWon( ) + " won";
-        else if( canNotPlay( ) )
+        int winner = whoWon();
+        if (winner == player) {
+            return "Player 1 won";
+        } else if (winner != 0) {
+            return "Player 2 won";
+        } else if (canNotPlay()) {
             return "Tie Game";
-        else
-            return "PLAY !!";
+        } else if (player == turn){
+            return "Your Turn";
+        }
+        else {
+            return "Waiting for Opponent";
+        }
+        }
     }
-}
+
