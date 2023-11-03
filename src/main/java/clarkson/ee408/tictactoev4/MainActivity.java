@@ -15,10 +15,14 @@ import android.widget.GridLayout;
 import android.widget.TextView;
 import com.google.gson.Gson;
 import android.os.Handler;
+import android.widget.Toast;
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import client.AppExecutors;
 import client.SocketClient;
+import socket.GamingResponse;
 import socket.Request;
 import socket.Response;
 
@@ -30,12 +34,10 @@ public class MainActivity extends AppCompatActivity {
     private Gson gson;
     private Handler handler = new Handler();
     private Boolean shouldRequestMove = false;
-    private int player = tttGame.getPlayer();
     @Override
     protected void onCreate( Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
-        tttGame = new TicTacToe(player);
-        player = tttGame.getPlayer();
+        tttGame = new TicTacToe(1);
         buildGuiByCode( );
         gson = new Gson();
         handler.postDelayed(runnableCode, 2000);
@@ -52,11 +54,20 @@ public class MainActivity extends AppCompatActivity {
     };
     private void requestMove(){
         Request request = new Request(Request.RequestType.REQUEST_MOVE, null);
-        SocketClient socketClient = SocketClient.getInstance();
-        Response response = socketClient.sendRequest(request, Response.class);
-        if(response != null && response.getStatus() == Response.ResponseStatus.SUCCESS){
-            new ButtonHandler();
-        }
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            SocketClient socketClient = SocketClient.getInstance();
+            GamingResponse response = socketClient.sendRequest(request, GamingResponse.class);
+            if(response != null && response.getStatus() == Response.ResponseStatus.SUCCESS){
+                if(response.getMove() != -1){
+                    int row = response.getMove() / 3;
+                    int col = response.getMove() % 3;
+                    AppExecutors.getInstance().mainThread().execute(() ->
+                            update(row, col));
+                }
+            }else {
+                Toast.makeText(this, "ygf", Toast.LENGTH_LONG).show();
+            }
+        });
     }
     private void sendMove(int row, int col) {
         Request request_ = new Request(Request.RequestType.SEND_MOVE, null);
