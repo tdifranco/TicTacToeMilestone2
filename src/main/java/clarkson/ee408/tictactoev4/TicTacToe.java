@@ -85,8 +85,7 @@ public class TicTacToe {
 
     /**
  * Checks for a winning pattern in the rows and returns the winning player or 0 if no one has won.
-            *
-            * @return The winning player (1 for Player 1, 2 for Player 2), or 0 if there is no winner in the rows.
+     * @return The winning player (1 for Player 1, 2 for Player 2), or 0 if there is no winner in the rows.
  */
     protected int checkRows( ) {
         for( int row = 0; row < SIDE; row++ )
