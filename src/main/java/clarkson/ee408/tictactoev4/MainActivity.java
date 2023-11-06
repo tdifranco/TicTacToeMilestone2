@@ -14,6 +14,8 @@ import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.TextView;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import android.os.Handler;
 import android.widget.Toast;
 
@@ -38,18 +40,19 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate( Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
         tttGame = new TicTacToe(1);
-        buildGuiByCode( );
-        gson = new Gson();
-        handler.postDelayed(runnableCode, 2000);
+        buildGuiByCode();
+        gson = new GsonBuilder().serializeNulls().create();
+        handler.post(runnableCode);
         updateTurnStatus();
     }
     // Define the code block to be executed
     private Runnable runnableCode = new Runnable() {
         @Override
         public void run() {
-            if (shouldRequestMove){
-            Log.d("Handlers", "Called on main thread");
-            requestMove();}
+            if (shouldRequestMove) {
+                requestMove();
+            }
+            handler.postDelayed(this, 3000);
         }
     };
     private void requestMove(){
@@ -63,30 +66,43 @@ public class MainActivity extends AppCompatActivity {
                     int col = response.getMove() % 3;
                     AppExecutors.getInstance().mainThread().execute(() ->
                             update(row, col));
+                    Log.e("", "There was a Move");
+                }else {
+                    Log.e("","No move");
                 }
             }else {
-                Toast.makeText(this, "ygf", Toast.LENGTH_LONG).show();
+                Log.e("","Request Error");
             }
         });
     }
     private void sendMove(int row, int col) {
-        Request request_ = new Request(Request.RequestType.SEND_MOVE, null);
-        int move_num = row + col;
+        int move_num = (row*3) + col;
         String moveJson = gson.toJson(move_num);
-        request_.setData(moveJson);
-        SocketClient socketClient = SocketClient.getInstance();
-        Response response = socketClient.sendRequest(move_num, Response.class);
+        Request request = new Request(Request.RequestType.SEND_MOVE, moveJson);
+
+        AppExecutors.getInstance().networkIO().execute(() -> {
+            SocketClient socketClient = SocketClient.getInstance();
+            Response response = socketClient.sendRequest(request, Response.class);
+            if (response != null && response.getStatus() == Response.ResponseStatus.SUCCESS){
+                Log.e("", "Move sent");
+            }
+            else {
+                Log.e("", "move not sent");
+            }
+        });
 
     }
 
     private void updateTurnStatus() {
-        shouldRequestMove = (tttGame.getPlayer() == tttGame.getTurn());
-        if (shouldRequestMove) {
+
+        if (tttGame.getPlayer() == tttGame.getTurn()) {
             status.setText("Your Turn");
+            shouldRequestMove = false;
+            enableButtons(true);
         } else {
             status.setText("Waiting for Opponent");
             shouldRequestMove = true;
-            enableButtons(shouldRequestMove);
+            enableButtons(false);
         }
 
     }
@@ -158,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void update( int row, int col ) {
+        Log.e("", "Updating the ui " + row + " " + col);
         int play = tttGame.play( row, col );
         if( play == 1 )
             buttons[row][col].setText( "X" );
@@ -168,6 +185,8 @@ public class MainActivity extends AppCompatActivity {
             enableButtons( false );
             status.setText( tttGame.result( ) );
             showNewGameDialog( );	// offer to play again
+        } else {
+            updateTurnStatus();
         }
     }
 
@@ -208,13 +227,25 @@ public class MainActivity extends AppCompatActivity {
             public void onClick( DialogInterface dialog, int id ) {
                 if( id == -1 ) /* YES button */ {
                     tttGame.resetGame( );
+                    if (tttGame.getPlayer() == 1){
+                      tttGame.setPlayer(2);
+                    } else {
+                      tttGame.setPlayer(1);
+                    }
                     enableButtons( true );
                     resetButtons( );
                     status.setBackgroundColor( Color.GREEN );
                     status.setText( tttGame.result( ) );
+                    updateTurnStatus();
                 }
                 else if( id == -2 ) // NO button
                     MainActivity.this.finish( );
             }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacks(runnableCode);
     }
 }

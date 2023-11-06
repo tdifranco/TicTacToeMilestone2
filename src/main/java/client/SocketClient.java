@@ -1,10 +1,15 @@
 package client;
 
+import android.util.Log;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import socket.Request;
 
 public class SocketClient {
     private static volatile SocketClient instance;
@@ -14,19 +19,19 @@ public class SocketClient {
     private Gson gson;
 
      private SocketClient() {
-            gson = new Gson();
+            gson = new GsonBuilder().serializeNulls().create();
             try {
                 socket = new Socket(SocketConfig.SERVER_IP, SocketConfig.SERVER_PORT);
                 inputStream = new DataInputStream(socket.getInputStream());
                 outputStream = new DataOutputStream(socket.getOutputStream());
             } catch (IOException e) {
                 // Handle exceptions, e.g., connection errors
-                System.err.println(e.getMessage());
+                Log.e("SocketClient", e.getMessage(), e);
             }
         }
     public class SocketConfig {
-        public static final String SERVER_IP = "0.0.0.0";
-        public static final int SERVER_PORT = 5000; // Replace with your server's port number
+        public static final String SERVER_IP = "128.153.177.140";
+        public static final int SERVER_PORT = 8000; // Replace with your server's port number
     }
 
 
@@ -54,24 +59,20 @@ public class SocketClient {
         }
     }
 
-    public <T> T sendRequest(Object request, Class<T> responseClass) {
+    public <T> T sendRequest(Request request, Class<T> responseClass) {
         try {
             String jsonRequest = gson.toJson(request);
 
-            byte[] requestBytes = jsonRequest.getBytes();
-            outputStream.writeInt(requestBytes.length);
-            outputStream.write(requestBytes);
+            outputStream.writeUTF(jsonRequest);
             outputStream.flush();
 
-            int responseLength = inputStream.readInt();
-            byte[] responseBytes = new byte[responseLength];
-            inputStream.readFully(responseBytes);
+            String jsonResponse = inputStream.readUTF();
 
-            String jsonResponse = new String(responseBytes);
             T responseObject = gson.fromJson(jsonResponse, responseClass);
             return responseObject;
         } catch (IOException e) {
             System.err.println(e.getMessage());
+            close();
             return null;
         }
     }
