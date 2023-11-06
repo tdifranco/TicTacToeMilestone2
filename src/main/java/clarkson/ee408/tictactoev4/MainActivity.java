@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate( Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
-        tttGame = new TicTacToe(1);
+        tttGame = new TicTacToe(2);
         buildGuiByCode();
         gson = new GsonBuilder().serializeNulls().create();
         handler.post(runnableCode);
@@ -215,27 +215,27 @@ public class MainActivity extends AppCompatActivity {
             updateTurnStatus();
         }
     }
-    /**
-     * Enables or disables all buttons on the game board.
-     *
-     * @param enabled true to enable buttons, false to disable them.
-     */
+       /**
+        * Enables or disables all buttons on the game board.
+        *
+        * @param enabled true to enable buttons, false to disable them.
+        */
     public void enableButtons( boolean enabled ) {
         for( int row = 0; row < TicTacToe.SIDE; row++ )
             for( int col = 0; col < TicTacToe.SIDE; col++ )
                 buttons[row][col].setEnabled( enabled );
     }
-    /**
-     * Resets the text labels on all buttons to empty.
-     */
+      /**
+       * Resets the text labels on all buttons to empty.
+       */
     public void resetButtons( ) {
         for( int row = 0; row < TicTacToe.SIDE; row++ )
             for( int col = 0; col < TicTacToe.SIDE; col++ )
                 buttons[row][col].setText( "" );
     }
-    /**
-     * Shows a dialog to start a new game or exit the application.
-     */
+      /**
+       * Shows a dialog to start a new game or exit the application.
+       * */
     public void showNewGameDialog( ) {
         AlertDialog.Builder alert = new AlertDialog.Builder( this );
         alert.setTitle(tttGame.result());
@@ -245,9 +245,9 @@ public class MainActivity extends AppCompatActivity {
         alert.setNegativeButton( "NO", playAgain );
         alert.show( );
     }
-    /**
-     * Button handler class for handling button clicks in the game.
-     */
+      /**
+       * Button handler class for handling button clicks in the game.
+       */
     private class ButtonHandler implements View.OnClickListener {
         public void onClick( View v ) {
             Log.d("button clicked", "button clicked");
@@ -259,9 +259,9 @@ public class MainActivity extends AppCompatActivity {
                             update(row, column);
         }
     }}
-    /**
-     * Dialog handler class for handling dialog choices to start a new game or exit.
-     */
+      /**
+       * Dialog handler class for handling dialog choices to start a new game or exit.
+      */
        private class PlayDialog implements DialogInterface.OnClickListener {
             public void onClick( DialogInterface dialog, int id ) {
                 if( id == -1 ) /* YES button */ {
