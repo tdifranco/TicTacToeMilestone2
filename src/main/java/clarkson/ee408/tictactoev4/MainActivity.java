@@ -27,7 +27,10 @@ import client.SocketClient;
 import socket.GamingResponse;
 import socket.Request;
 import socket.Response;
-
+/**
+ * The MainActivity class represents the main activity of the Tic-Tac-Toe game.
+ * It provides the user interface for playing the game and communicates with a remote server for multiplayer functionality.
+ */
 
 public class MainActivity extends AppCompatActivity {
     private TicTacToe tttGame;
@@ -36,10 +39,15 @@ public class MainActivity extends AppCompatActivity {
     private Gson gson;
     private Handler handler = new Handler();
     private Boolean shouldRequestMove = false;
+    /**
+     * onCreate method for initializing the activity.
+     *
+     * @param savedInstanceState The saved instance state (not used in this implementation).
+     */
     @Override
     protected void onCreate( Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
-        tttGame = new TicTacToe(1);
+        tttGame = new TicTacToe(2);
         buildGuiByCode();
         gson = new GsonBuilder().serializeNulls().create();
         handler.post(runnableCode);
@@ -52,9 +60,12 @@ public class MainActivity extends AppCompatActivity {
             if (shouldRequestMove) {
                 requestMove();
             }
-            handler.postDelayed(this, 3000);
+            handler.postDelayed(this, 1000);
         }
     };
+    /**
+     * Requests the server for a move to be made in the game.
+     */
     private void requestMove(){
         Request request = new Request(Request.RequestType.REQUEST_MOVE, null);
         AppExecutors.getInstance().networkIO().execute(() -> {
@@ -75,6 +86,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+    /**
+     * Sends a move to the server and updates the game UI accordingly.
+     *
+     * @param row The row of the move.
+     * @param col The column of the move.
+     */
     private void sendMove(int row, int col) {
         int move_num = (row*3) + col;
         String moveJson = gson.toJson(move_num);
@@ -92,7 +109,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
-
+    /**
+     * Updates the game's turn status, indicating whose turn it is.
+     */
     private void updateTurnStatus() {
 
         if (tttGame.getPlayer() == tttGame.getTurn()) {
@@ -106,7 +125,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-
+    /**
+     * Builds the user interface of the game by code, creating buttons and layout elements.
+     */
     public void buildGuiByCode( ) {
         // Get width of the screen
         Point size = new Point( );
@@ -172,7 +193,12 @@ public class MainActivity extends AppCompatActivity {
         // Set gridLayout as the View of this Activity
         setContentView( gridLayout );
     }
-
+    /**
+     * Updates the UI based on a player's move.
+     *
+     * @param row The row of the move.
+     * @param col The column of the move.
+     */
     public void update( int row, int col ) {
         Log.e("", "Updating the ui " + row + " " + col);
         int play = tttGame.play( row, col );
@@ -189,19 +215,27 @@ public class MainActivity extends AppCompatActivity {
             updateTurnStatus();
         }
     }
-
+    /**
+     * Enables or disables all buttons on the game board.
+     *
+     * @param enabled true to enable buttons, false to disable them.
+     */
     public void enableButtons( boolean enabled ) {
         for( int row = 0; row < TicTacToe.SIDE; row++ )
             for( int col = 0; col < TicTacToe.SIDE; col++ )
                 buttons[row][col].setEnabled( enabled );
     }
-
+    /**
+     * Resets the text labels on all buttons to empty.
+     */
     public void resetButtons( ) {
         for( int row = 0; row < TicTacToe.SIDE; row++ )
             for( int col = 0; col < TicTacToe.SIDE; col++ )
                 buttons[row][col].setText( "" );
     }
-
+    /**
+     * Shows a dialog to start a new game or exit the application.
+     */
     public void showNewGameDialog( ) {
         AlertDialog.Builder alert = new AlertDialog.Builder( this );
         alert.setTitle(tttGame.result());
@@ -211,7 +245,9 @@ public class MainActivity extends AppCompatActivity {
         alert.setNegativeButton( "NO", playAgain );
         alert.show( );
     }
-
+    /**
+     * Button handler class for handling button clicks in the game.
+     */
     private class ButtonHandler implements View.OnClickListener {
         public void onClick( View v ) {
             Log.d("button clicked", "button clicked");
@@ -223,6 +259,9 @@ public class MainActivity extends AppCompatActivity {
                             update(row, column);
         }
     }}
+    /**
+     * Dialog handler class for handling dialog choices to start a new game or exit.
+     */
        private class PlayDialog implements DialogInterface.OnClickListener {
             public void onClick( DialogInterface dialog, int id ) {
                 if( id == -1 ) /* YES button */ {
@@ -242,7 +281,9 @@ public class MainActivity extends AppCompatActivity {
                     MainActivity.this.finish( );
             }
     }
-
+    /**
+     * onDestroy method for cleaning up resources when the activity is destroyed.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
